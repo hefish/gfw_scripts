@@ -46,28 +46,28 @@ class DdnsMon:
 
        
     def remove_rules(self, old_ip):
-        cmd = "iptables -D INPUT -m state --state NEW -p %s --dport %s -j ACCEPT" % (self.proto, self.local_port)
+        cmd = "/sbin/iptables -D INPUT -m state --state NEW -p %s --dport %s -j ACCEPT" % (self.proto, self.local_port)
         os.system(cmd)
         print (cmd)
 
-        cmd = "iptables -t nat -D PREROUTING -p %s --dport %s -j DNAT --to-destination %s:%s" %(self.proto, self.local_port, old_ip, self.port)
+        cmd = "/sbin/iptables -t nat -D PREROUTING -p %s --dport %s -j DNAT --to-destination %s:%s" %(self.proto, self.local_port, old_ip, self.port)
         os.system(cmd)
         print (cmd)
 
-        cmd = "iptables -t nat -D POSTROUTING -d %s -p %s --dport %s -j SNAT --to-source %s" % (old_ip, self.proto, self.port, self.local_ip)
+        cmd = "/sbin/iptables -t nat -D POSTROUTING -d %s -p %s --dport %s -j SNAT --to-source %s" % (old_ip, self.proto, self.port, self.local_ip)
         os.system(cmd)
         print (cmd)
     
     def add_rules(self, now_ip):
-        cmd = "iptables -A INPUT -m state --state NEW -p %s --dport %s -j ACCEPT" % (self.proto, self.local_port)
+        cmd = "/sbin/iptables -A INPUT -m state --state NEW -p %s --dport %s -j ACCEPT" % (self.proto, self.local_port)
         os.system(cmd)
         print (cmd)
 
-        cmd = "iptables -t nat -A PREROUTING -p %s --dport %s -j DNAT --to-destination %s:%s" %(self.proto, self.local_port, now_ip, self.port)
+        cmd = "/sbin/iptables -t nat -A PREROUTING -p %s --dport %s -j DNAT --to-destination %s:%s" %(self.proto, self.local_port, now_ip, self.port)
         os.system(cmd)
         print (cmd)
 
-        cmd = "iptables -t nat -A POSTROUTING -d %s -p %s --dport %s -j SNAT --to-source %s" % (now_ip, self.proto, self.port, self.local_ip)
+        cmd = "/sbin/iptables -t nat -A POSTROUTING -d %s -p %s --dport %s -j SNAT --to-source %s" % (now_ip, self.proto, self.port, self.local_ip)
         os.system(cmd)
         print (cmd)
 
