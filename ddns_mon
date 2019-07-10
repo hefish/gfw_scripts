@@ -5,6 +5,7 @@ import json
 import socket
 import getopt
 import sys
+import logging
 
 
 cache_file = os.path.dirname(__file__) +'/cache.dat'
@@ -12,6 +13,8 @@ cache_file = os.path.dirname(__file__) +'/cache.dat'
 
 class DdnsMon:
     def __init__(self):
+        logging.basicConfig(filename=os.path.dirname(__file__) + '/ddns_mon.log', level=logging.INFO, format="%(asctime)s-%(name)s-%(levelname)s-%(message)s")
+
         try:
             if len(sys.argv) <= 1:
                 self.usage()
@@ -36,6 +39,7 @@ class DdnsMon:
         now_ip = socket.gethostbyname(self.domain)
         old_ip = self.get_cached_ip(self.domain, self.proto)
         if now_ip == old_ip:
+            print ("no need to update rules. ")
             return
         if old_ip != None: 
             self.remove_rules(old_ip)
@@ -46,30 +50,32 @@ class DdnsMon:
 
        
     def remove_rules(self, old_ip):
-        cmd = "/sbin/iptables -D INPUT -m state --state NEW -p %s --dport %s -j ACCEPT" % (self.proto, self.local_port)
+        logging.info("remove rules... ")
+        cmd = "/sbin/iptables -D INPUT -p %s -m state --state NEW -m %s --dport %s -j ACCEPT" % (self.proto, self.proto, self.local_port)
         os.system(cmd)
-        print (cmd)
+        logging.info(cmd)
 
-        cmd = "/sbin/iptables -t nat -D PREROUTING -p %s --dport %s -j DNAT --to-destination %s:%s" %(self.proto, self.local_port, old_ip, self.port)
+        cmd = "/sbin/iptables -t nat -D PREROUTING -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" %(self.proto, self.proto, self.local_port, old_ip, self.port)
         os.system(cmd)
-        print (cmd)
+        logging.info(cmd)
 
-        cmd = "/sbin/iptables -t nat -D POSTROUTING -d %s -p %s --dport %s -j SNAT --to-source %s" % (old_ip, self.proto, self.port, self.local_ip)
+        cmd = "/sbin/iptables -t nat -D POSTROUTING -d %s -p %s -m %s --dport %s -j SNAT --to-source %s" % (old_ip, self.proto, self.proto, self.port, self.local_ip)
         os.system(cmd)
-        print (cmd)
+        logging.info(cmd)
     
     def add_rules(self, now_ip):
-        cmd = "/sbin/iptables -A INPUT -m state --state NEW -p %s --dport %s -j ACCEPT" % (self.proto, self.local_port)
+        logging.info("add rules...")
+        cmd = "/sbin/iptables -A INPUT -p %s -m state --state NEW -m %s --dport %s -j ACCEPT" % (self.proto, self.proto, self.local_port)
         os.system(cmd)
-        print (cmd)
+        logging.info(cmd)
 
-        cmd = "/sbin/iptables -t nat -A PREROUTING -p %s --dport %s -j DNAT --to-destination %s:%s" %(self.proto, self.local_port, now_ip, self.port)
+        cmd = "/sbin/iptables -t nat -A PREROUTING -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" %(self.proto, self.proto, self.local_port, now_ip, self.port)
         os.system(cmd)
-        print (cmd)
+        logging.info(cmd)
 
-        cmd = "/sbin/iptables -t nat -A POSTROUTING -d %s -p %s --dport %s -j SNAT --to-source %s" % (now_ip, self.proto, self.port, self.local_ip)
+        cmd = "/sbin/iptables -t nat -A POSTROUTING -d %s -p %s -m %s --dport %s -j SNAT --to-source %s" % (now_ip, self.proto, self.proto, self.port, self.local_ip)
         os.system(cmd)
-        print (cmd)
+        logging.info(cmd)
 
     def get_cached_ip(self, domain, proto):
         try:
