@@ -6,9 +6,7 @@ import re
 import os
 import sys
 from requests import get
-
-cf_user = "hefish@gmail.com"
-cf_key = "4205ce95910fcf8f637ec1570a910ecadeb23"
+import ConfigParser
 
 
 class CfDns :
@@ -40,9 +38,15 @@ class CfDns :
                 self._zone_name = m.group(1)
         else: 
             exit("Error: dns name not set")
+        
+        cp = ConfigParser.ConfigParser()
+        cfg_file = os.path.dirname(__file__) + '/cfdns.conf'
+        cp.read(cfg_file)
+        self._cf_user = cp.get("cloudflare", 'email')
+        self._cf_key = cp.get("cloudflare", 'token')
 
     def update(self):
-        cf = CloudFlare.CloudFlare(email=cf_user, token=cf_key)
+        cf = CloudFlare.CloudFlare(email=self._cf_user, token=self._cf_key)
         
         try:
             params = { 'name': self._zone_name}
@@ -98,9 +102,9 @@ class CfDns :
 
 
     def usage(self):
-        print "cfdns.py "
-        print "  -n   dns name"
-        print "  -d   network device"
+        print ("cfdns.py ")
+        print ("  -n   dns name")
+        print ("  -d   network device")
 
 
     def get_dev_ip(self, dev):
@@ -117,7 +121,6 @@ class CfDns :
 
     def get_default_ip(self):
         ip = get('https://api.ipify.org').text
-        print ip
         return ip
 
         
