@@ -16,7 +16,7 @@ class CfDns :
         try:
             if len(sys.argv) <= 1:
                 self.usage()
-            opts, args = getopt.getopt(sys.argv[1:], 'n:d', [])
+            opts, args = getopt.getopt(sys.argv[1:], 'n:d:', [])
         except getopt.GetoptError:
             self.usage()
         
@@ -24,17 +24,17 @@ class CfDns :
         self._dns_name = None
         self._zone_name = None
         
-        for k,v in opts:
+        for k,v in opts: 
             if k in ("-n"):
-                self._dns_name =v
+                self._dns_name =v 
             elif k in ("-d"):
                 self._dev = v
 
         if self._dns_name != None:
-            m = re.match("^([\w|-]+)((\.[\w|-]+)*)$", self._dns_name)
+            m = re.match(r"^([\w|-]+)((\.[\w|-]+)*)$", self._dns_name)
             if m != None:
                 zone_name = m.group(2)
-                m = re.match("^\.(.*)$", zone_name)
+                m = re.match(r"^\.(.*)$", zone_name)
                 self._zone_name = m.group(1)
         else: 
             exit("Error: dns name not set")
@@ -62,14 +62,13 @@ class CfDns :
             exit('/zones.get - %s - api call returned %d items' % (self._zone_name, len(zones)))
         
         zone = zones[0]
-        zone_name = zone['name']
         zone_id = zone['id']
 
         try:
             params = {'name': self._dns_name, 'match': 'all', 'type': 'A'}
             dns_records = cf.zones.dns_records.get(zone_id, params = params)
         except CloudFlare.exceptions.CloudFlareAPIError as e:
-            exit('/zones/dns_records %s - %d %s - api call failed' % (dns_name, e, e))
+            exit('/zones/dns_records %s - %d %s - api call failed' % (self._dns_name, e, e))
         
         if self._dev != None:
             ip = self.get_dev_ip(self._dev)
@@ -113,7 +112,7 @@ class CfDns :
         output = buf.readlines()
         for line in output:
             l = line.strip()
-            m = re.match("^inet (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})", l)
+            m = re.match(r"^inet (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})", l)
             if m == None:
                 continue
             return m.group(1)
