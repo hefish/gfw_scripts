@@ -18,6 +18,8 @@ class CNRoute:
 
         self._route_file = os.path.dirname(__file__) + '/all_cn_cidr.txt'
 
+        cmd = ""
+
         for k,v in opts:
             if k in ("-u"):
                 cmd = "u"
