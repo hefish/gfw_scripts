@@ -6,5 +6,4 @@ CentOS 7:
 Debian 10: 
     apt install python-pip -y
     pip install cloudflare 
-    
-    
+
