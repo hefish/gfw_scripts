@@ -4,6 +4,7 @@ import CloudFlare
 import getopt
 import re
 import os
+import signal
 import sys
 from requests import get
 import ConfigParser
@@ -46,20 +47,22 @@ class CfDns :
         self._cf_key = cp.get("cloudflare", 'token')
 
     def update(self):
+        self.mark_cfdns_running()
+
         cf = CloudFlare.CloudFlare(email=self._cf_user, token=self._cf_key)
-        
+       
         try:
             params = { 'name': self._zone_name}
             zones = cf.zones.get(params = params)
         except CloudFlare.exceptions.CloudFlareAPIError as e:
-            exit('/zones %d %s - api call failed' % (e, e))
+            self.err('/zones %d %s - api call failed' % (e, e))
         except Exception as e:
-            exit('/zones.get - %s - api call failed' % (e))
+            self.err('/zones.get - %s - api call failed' % (e))
         
         if len(zones) == 0:
-            exit('/zones.get - %s - zone not found' % (self._zone_name))
+            self.err('/zones.get - %s - zone not found' % (self._zone_name))
         if len(zones) != 1:
-            exit('/zones.get - %s - api call returned %d items' % (self._zone_name, len(zones)))
+            self.err('/zones.get - %s - api call returned %d items' % (self._zone_name, len(zones)))
         
         zone = zones[0]
         zone_id = zone['id']
@@ -68,7 +71,7 @@ class CfDns :
             params = {'name': self._dns_name, 'match': 'all', 'type': 'A'}
             dns_records = cf.zones.dns_records.get(zone_id, params = params)
         except CloudFlare.exceptions.CloudFlareAPIError as e:
-            exit('/zones/dns_records %s - %d %s - api call failed' % (self._dns_name, e, e))
+            self.err('/zones/dns_records %s - %d %s - api call failed' % (self._dns_name, e, e))
         
         if self._dev != None:
             ip = self.get_dev_ip(self._dev)
@@ -83,7 +86,7 @@ class CfDns :
             if old_ip_type != 'A':
                 continue
             if old_ip_address == ip:
-                exit("Not need to update")
+                self.err("Not need to update")
             dns_record_id = dns_record['id']
             dns_record = {
                 'name': self._dns_name,
@@ -94,9 +97,10 @@ class CfDns :
             try:
                 dns_record = cf.zones.dns_records.put(zone_id, dns_record_id, data=dns_record)
             except CloudFlare.exceptions.CloudFlareAPIError as e:
-                exit('/zones.dns_records.put %s - %d %s - api call failed' % (self._dns_name, e, e))
+                self.err('/zones.dns_records.put %s - %d %s - api call failed' % (self._dns_name, e, e))
             
             print('UPDATED: %s %s -> %s' % (self._dns_name, old_ip_address, ip))
+            self.mark_cfdns_not_running()
         
 
 
@@ -122,7 +126,32 @@ class CfDns :
         ip = get('https://api.ipify.org').text
         return ip
 
-        
+    # is_cfdns_running
+    # check whether cfdns is running and kill it .
+    def is_cfdns_running(self):
+        pid_file = os.path.dirname(__file__) + "/cfdns.pid"
+        if os.path.exists(pid_file):
+            with open(pid_file) as f:
+                pid = f.read()
+                f.close()
+            os.kill(pid, signal.SIGTERM)
+            os.unlink(pid_file)
+
+    def mark_cfdns_running(self):
+        self.is_cfdns_running()
+        pid_file = os.path.dirname(__file__) + "/cfdns.pid"
+        with open(pid_file, "w") as f:
+            f.write(os.getpid())
+            f.close()
+    
+    def mark_cfdns_not_running(self):
+        pid_file = os.path.dirname(__file__) + "/cfdns.pid"
+        os.unlink(pid_file)
+
+    def err(self, errmsg):
+        self.mark_cfdns_not_running()
+        exit(errmsg)
+     
 
 cf = CfDns()
 cf.update()
