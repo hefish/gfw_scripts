@@ -1,6 +1,6 @@
 #!/bin/sh
 
-UID=8427
+UID1=8427
 UID2=8428
 SHELL_=/bin/bash
 HOME_DIR=/home/hefish
@@ -12,13 +12,13 @@ HOME_DIR2=/home/rongsu
 
 case $ID in 
     debian|ubuntu)
-        useradd -g users -u $UID -G sudo -s $SHELL_ -d $HOME_DIR hefish
+        useradd -g users -u $UID1 -G sudo -s $SHELL_ -d $HOME_DIR hefish
         useradd -g users -u $UID2 -G sudo -s $SHELL_ -d $HOME_DIR2 rongsu
         #passwd hefish
         mkdir $HOME_DIR
         ;;
     centos|fedora|rhel)
-        useradd -g users -u $UID -G wheel -s $SHELL_ -d $HOME_DIR hefish
+        useradd -g users -u $UID1 -G wheel -s $SHELL_ -d $HOME_DIR hefish
         useradd -g users -u $UID2 -G wheel -s $SHELL_ -d $HOME_DIR2 rongsu
         #passwd hefish
         ;;
